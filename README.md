@@ -58,11 +58,11 @@ Once in the script and running:
   > ~ Alright, starting to do stuff now. Come back in 5 mins.
 
   Follow it.
-- When the script is done, it'll say so. `scp` the log file to your macbook just in case.
+- When the script is done, it'll say so. `scp` the log file to your local computer just in case.
 
-**Note**: There are a few *expected* errors/messages that this script will post when running, such as failing to generate the initial initramfs/kernel and umount warnings at the end. These are expected, so don't stress. If you're really concerned, feel free to hit me up.
+**Note**: There are a few *expected* errors/messages that this script will post when running, such as failing to generate the initial initramfs/kernel and umount warnings at the end. These are expected, so don't stress. 
 
-At this point, you'll clear to reboot back into the system.
+At this point, you're clear to reboot back into the system.
 
 ## Using the system
 In order to enter your LUKS password to decrypt the disks, you'll need to connect with Lish first. After it's successfully unlocked, the system will finish booting and you can access the system with SSH
@@ -85,4 +85,4 @@ mount -o defaults,noatime,compress=lzo,subvol=root /dev/mapper/crypt-sdc /mnt/ar
 ## License
 This project is sarcastically licensed under the [WTFPL](http://www.wtfpl.net/). Go nuts.
 
-Full license can be found in 'License.md' file.
+Full license can be found in 'LICENSE.md' file.
