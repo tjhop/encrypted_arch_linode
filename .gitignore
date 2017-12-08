@@ -1,0 +1,10 @@
+# git ignore specifications
+
+/*
+!*.sh
+!*.md
+
+# ignore todo-list file
+TODO.md
+
+!.gitignore
