@@ -246,7 +246,7 @@ sysstat
 strace
 nmap
 wget
-screen
+tmux
 dnsutils
 tcpdump
 clamav
