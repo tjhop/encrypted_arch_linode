@@ -3,6 +3,8 @@
 /*
 !*.sh
 !*.md
+!create.py
+!config.yaml.example
 
 # ignore todo-list file
 TODO.md

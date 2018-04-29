@@ -1,0 +1,12 @@
+# overall api config values
+api:
+  api-token: 'secretapitoken'
+
+# linode object config values
+linode:
+  type: 'g5-nanode-1'
+  region: 'us-central' # Dallas DC
+  label: 'example linode label'
+  group: 'example linode group'
+  config_profile:
+    label: 'example config profile label'
