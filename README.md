@@ -11,30 +11,47 @@ It works and does everything I want right now:
 - Provides a (IMO) good base/clean slate to work from. The remainder of the system configuration is purposefully left for other config scripts or system configuration services (I'm using salt now).
 
 ## Using the script/Installing
-This requires some manual prep because it builds the encrypted disks from rescue mode. Here's my current workflow:
+This requires some manual prep because it builds the encrypted disks from rescue mode. There's a script included in this repo called `create.py` that will create a Linode based on the options specified in `config.yaml` using the new Linode API v4 and boot it into rescue mode for.
 
-Linode creation and prep:
-- Create new Linode at desired size/location
-- Create 3 disks and format them as follows:
+Here's an example `config.yaml`:
+```
+# overall api config values
+api:
+  api-token: 'secretapitoken'
+
+# linode object config values
+linode:
+  type: 'g5-nanode-1'
+  region: 'us-central' # Dallas DC
+  label: 'example linode label'
+  group: 'example linode group'
+  config_profile:
+    label: 'example config profile label'
+```
+
+The script will create a Linode with following disk arrangement and configuration profile:
+```
+- Disks:
   - /dev/sda
-    - label: boot
+    - label: Boot
     - type: unformatted/RAW
     - size: 256 MB
   - /dev/sdb
-    - label: swap
+    - label: Swap
     - type: unformatted/RAW
     - size: 256 MB
   - /dev/sdc
-    - label: arch (or whatever you want to name your system disk)
+    - label: System
     - type: unformatted/RAW
     - size: <remaining disk space>
-- Create configuration profile as follows:
+- Configuration Profile:
   - Kernel: GRUB2
-  - Disks: specify /dev/sda, /dev/sdb, and /dev/sdc as specified above ^
-  - Disable all boot helpers (at the bottom)
-- Reboot the Linode into rescue mode (and specify /dev/sda, /dev/sdb, and /dev/sdc as specified above ^)
+  - Disks: /dev/sda, /dev/sdb, and /dev/sdc as specified above ^
+  - All boot helpers disabled
+```
+The Linode will also be rebooted into rescue mode automatically.
 
-Once the Linode is in rescue mode:
+## Once the Linode is in rescue mode:
 - Connect to the Linode with Lish and set password and enable SSH:
 
   ```
@@ -42,7 +59,7 @@ Once the Linode is in rescue mode:
   service ssh start
   ```
 - Get the `arch_install.sh` script onto the rescue system and executable somehow. `Git clone`, `scp, vim`, etc.
-- Run the `arch_install.sh` script with a syntax similar to this:
+- Run the `arch_install.sh` script:
 
   `./arch_install 2>&1 | tee arch.log`
 
@@ -60,7 +77,7 @@ Once in the script and running:
   Follow it.
 - When the script is done, it'll say so. `scp` the log file to your local computer just in case.
 
-**Note**: There are a few *expected* errors/messages that this script will post when running, such as failing to generate the initial initramfs/kernel and umount warnings at the end. These are expected, so don't stress. 
+**Note**: There are a few *expected* errors/messages that this script will post when running, such as failing to generate the initial initramfs/kernel. These are expected, so don't stress.
 
 At this point, you're clear to reboot back into the system.
 
@@ -73,7 +90,7 @@ Connect to the Linode with Lish and then reboot it into rescue mode. When Finnix
 If you miss this prompt, you can still mount it manually like so:
 
 ```shell
-# *Note*: Entering your password directly on the Lish console will log it in
+# *Note*: Entering your password directly on the Lish console can log it in
 # the Linode's console log on the host. If you're security conscious, this is
 # bad. Do this to enter password without visible console output.
 read -rsp '> ' LUKSPASSWD
