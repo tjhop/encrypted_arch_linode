@@ -3,10 +3,10 @@
 # Encrypted Arch Installer -- original version by Joe Korang.
 # Stealing and adjusting to better fit my prefernces/uses.
 #
-# Author: TJ
+# Author: TJ Hoplock
 #
 # Prereqs/Assumptions:
-# - Must create 3 disk:
+# - Must create 3 disks:
 #   - /dev/sda = 256 MB, unformatted/raw, for boot disk
 #   - /dev/sdb = 256 MB, unformatted/raw, for swap disk
 #   - /dev/sdc = remaining storage, unformatted/raw, for system disk
@@ -17,6 +17,8 @@
 
 # gather info
 # ------------
+
+set -euo pipefail
 
 echo "Pick a hostname" && read -rp '> ' HOSTNAME && echo
 
@@ -127,29 +129,27 @@ BOOTSTRAP_FILE="archlinux-bootstrap-$BOOTSTRAP_DATE.01-x86_64.tar.gz"
 BOOTSTRAP_URL="https://mirrors.kernel.org/archlinux/iso/$BOOTSTRAP_DATE.01/$BOOTSTRAP_FILE"
 # wget was being annoying.
 echo "Downloading newest Arch bootstrap"
-curl -sO --insecure "$BOOTSTRAP_URL" || { echo "couldn't download <$BOOTSTRAP_FILE>"; echo "=("; exit 1; }
+wget -4 --quiet  --no-check-certificate "$BOOTSTRAP_URL" || { echo "couldn't download <$BOOTSTRAP_FILE>"; echo "=("; exit 1; }
 tar xf $BOOTSTRAP_FILE
 # use a different delimiter for sed so it doesn't get tripped up on /'s in url
 sed -i 's?#Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?' root.x86_64/etc/pacman.d/mirrorlist
 
-cat << ARCH_STRAP_EOF | root.x86_64/bin/arch-chroot /tmp/root.x86_64 /bin/bash
-# needed for finnix/debian weirdness where link for /dev/shm -> /run/shm which doesn't exist
-mkdir /run/shm
-pacman-key --init
-pacman-key --populate archlinux
-
-# prep mount directories and create btrfs system, then pacstrap
-pacman -Syu --needed --noconfirm
-pacman -S btrfs-progs --needed --noconfirm
+# create subvolume settings
 mkdir -p /mnt/btrfs-root
-mkdir -p /mnt/arch-root
 mount -t btrfs /dev/mapper/crypt-sdc /mnt/btrfs-root
 btrfs subvolume create /mnt/btrfs-root/root
 btrfs subvolume create /mnt/btrfs-root/snapshots
 umount /mnt/btrfs-root/
+
+cat << ARCH_STRAP_EOF | root.x86_64/bin/arch-chroot /tmp/root.x86_64 /bin/bash
+# needed for finnix/debian weirdness where link for /dev/shm -> /run/shm which doesn't exist
+mkdir /run/shm
+mkdir -p /mnt/arch-root
 mount -o defaults,noatime,compress=lzo,subvol=root /dev/mapper/crypt-sdc /mnt/arch-root
 mkdir -p /mnt/arch-root/boot
 mount /dev/sda /mnt/arch-root/boot
+pacman-key --init
+pacman-key --populate archlinux
 pacstrap /mnt/arch-root base base-devel
 genfstab -p /mnt/arch-root/ >> /mnt/arch-root/etc/fstab
 
@@ -236,22 +236,22 @@ echo "~ Updating system and installing some default packages"
 pacman -Syyu --noconfirm
 cat << PKG_LIST_EOF | tr '\n' ' ' | pacman -S --noconfirm --needed -
 btrfs-progs
+clamav
+dnsutils
+git
+haveged
+nmap
+openssh
+salt
+strace
+sysstat
+tcpdump
+tmux
+ufw
+vim
+wget
 zsh
 zsh-syntax-highlighting
-vim
-git
-openssh
-archey3
-sysstat
-strace
-nmap
-wget
-tmux
-dnsutils
-tcpdump
-clamav
-ufw
-salt
 PKG_LIST_EOF
 
 # install pacaur
@@ -294,8 +294,6 @@ autoload predict-on
 # build prompt
 PROMPT="%F{magenta}%n@%m%f:%F{cyan}%~%f %F{green}%(!.=>.->)%f "
 
-archey3
-
 ZSH_CONFIG_EOF
 
 USER_CONFIG_EOF
@@ -310,11 +308,9 @@ echo "~ Populate /etc/resolv.conf"
 # if this is done *inside* the chroot, it sets the resolv.conf for the host system
 # (ie, finnix)
 cat > /mnt/arch-root/etc/resolv.conf << RESOLV_EOF
-# Google DNS ftw
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-nameserver 2001:4860:4860::8888
-nameserver 2001:4860:4860::8844
+# CloudFlare DNS
+nameserver 1.1.1.1
+nameserver 1.0.0.1
 
 RESOLV_EOF
 
