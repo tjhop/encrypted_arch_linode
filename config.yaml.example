@@ -1,6 +1,5 @@
 # overall api config values
-api:
-  api-token: 'secretapitoken'
+api-token: 'secretapitoken'
 
 # linode object config values
 linode:

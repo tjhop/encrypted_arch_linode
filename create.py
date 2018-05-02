@@ -14,7 +14,7 @@ import calendar
 with open('config.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
-token = config.get('api').get('api-token')
+token = config.get('api-token')
 client = LinodeClient(token)
 
 # get necessary variables

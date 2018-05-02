@@ -16,8 +16,7 @@ This requires some manual prep because it builds the encrypted disks from rescue
 Here's an example `config.yaml`:
 ```
 # overall api config values
-api:
-  api-token: 'secretapitoken'
+api-token: 'secretapitoken'
 
 # linode object config values
 linode:
