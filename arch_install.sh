@@ -134,27 +134,35 @@ tar xf $BOOTSTRAP_FILE
 # use a different delimiter for sed so it doesn't get tripped up on /'s in url
 sed -i 's?#Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?' root.x86_64/etc/pacman.d/mirrorlist
 
-# create subvolume settings
-mkdir -p /mnt/btrfs-root
-mount -t btrfs /dev/mapper/crypt-sdc /mnt/btrfs-root
-btrfs subvolume create /mnt/btrfs-root/root
-btrfs subvolume create /mnt/btrfs-root/snapshots
-umount /mnt/btrfs-root/
+# create subvolumes in Snapper's recommended subvolume layout
+mount -o compress=lzo /dev/mapper/crypt-sdc /mnt
+# top level subvols
+btrfs subvolume create /mnt/@           # will mount at /
+btrfs subvolume create /mnt/@snapshots  # will mount at /.snapshots
+btrfs subvolume create /mnt/@home       # will mount at /home
+umount /mnt
 
 cat << ARCH_STRAP_EOF | root.x86_64/bin/arch-chroot /tmp/root.x86_64 /bin/bash
 # needed for finnix/debian weirdness where link for /dev/shm -> /run/shm which doesn't exist
 mkdir /run/shm
-mkdir -p /mnt/arch-root
-mount -o defaults,noatime,compress=lzo,subvol=root /dev/mapper/crypt-sdc /mnt/arch-root
-mkdir -p /mnt/arch-root/boot
-mount /dev/sda /mnt/arch-root/boot
+
+# mount root subvolume, top level subvolumes, and any other top level partitions
+mount -o compress=lzo,subvol=@ /dev/mapper/crypt-sdc /mnt
+mkdir -p /mnt/.snapshots
+mount -o compress=lzo,subvol=@snapshots /dev/mapper/crypt-sdc /mnt/.snapshots
+mkdir -p /mnt/home
+mount -o compress=lzo,subvol=@home /dev/mapper/crypt-sdc /mnt/home
+mkdir -p /mnt/boot
+mount /dev/sda /mnt/boot
+# nested subvolumes can be created here, as well
+
 pacman-key --init
 pacman-key --populate archlinux
-pacstrap /mnt/arch-root base base-devel
-genfstab -p /mnt/arch-root/ >> /mnt/arch-root/etc/fstab
+pacstrap /mnt base base-devel btrfs-progs
+genfstab -p /mnt/ >> /mnt/etc/fstab
 
 # Some system-level config junk
-cat << SYSTEM_BUILD_EOF | arch-chroot /mnt/arch-root /bin/bash
+cat << SYSTEM_BUILD_EOF | arch-chroot /mnt /bin/bash
 # general system config
 echo "~ Some system config stuff"
 sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
@@ -243,6 +251,7 @@ haveged
 nmap
 openssh
 salt
+snapper
 strace
 sysstat
 tcpdump
@@ -307,7 +316,7 @@ echo "~ Populate /etc/resolv.conf"
 # because the arch-root script binds the host resolv.conf to the chrooted system
 # if this is done *inside* the chroot, it sets the resolv.conf for the host system
 # (ie, finnix)
-cat > /mnt/arch-root/etc/resolv.conf << RESOLV_EOF
+cat > /mnt/etc/resolv.conf << RESOLV_EOF
 # CloudFlare DNS
 nameserver 1.1.1.1
 nameserver 1.0.0.1

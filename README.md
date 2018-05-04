@@ -6,12 +6,12 @@ Build ArchLinux using BTRFS on encrypted disks on a [Linode server](https://www.
 ## Status
 It works and does everything I want right now:
 - Builds Arch on encrypted disks
-- Uses BTRFS by default with simple subvolume setup (root and snapshots, no separate home subvolumes or anything)
+- Uses BTRFS by default with simple subvolume setup in line with the [snapper suggested subvol layout](https://wiki.archlinux.org/index.php/Snapper#Suggested_filesystem_layout)
 - Tries to follow Arch philosophy (minimal system config, only installs a few extra packages I use frequently, don't enable extra services by default, etc)
 - Provides a (IMO) good base/clean slate to work from. The remainder of the system configuration is purposefully left for other config scripts or system configuration services (I'm using salt now).
 
 ## Using the script/Installing
-This requires some manual prep because it builds the encrypted disks from rescue mode. There's a script included in this repo called `create.py` that will create a Linode based on the options specified in `config.yaml` using the new Linode API v4 and boot it into rescue mode for.
+This requires some manual prep because it builds the encrypted disks from rescue mode. There's a script included in this repo called `create.py` that will create a Linode based on the options specified in `config.yaml` using the new Linode API v4 and boot it into rescue mode for you.
 
 Here's an example `config.yaml`:
 ```
@@ -94,8 +94,8 @@ If you miss this prompt, you can still mount it manually like so:
 # bad. Do this to enter password without visible console output.
 read -rsp '> ' LUKSPASSWD
 echo -n "$LUKSPASSWD" | cryptsetup luksOpen /dev/sdc crypt-sdc --key-file=-
-mkdir -p /mnt/arch-root
-mount -o defaults,noatime,compress=lzo,subvol=root /dev/mapper/crypt-sdc /mnt/arch-root
+mount -o compress=lzo,subvol=@ /dev/mapper/crypt-sdc /mnt
+mount -o compress=lzo,subvol=@home /dev/mapper/crypt-sdc /mnt/home
 ```
 
 ## License
