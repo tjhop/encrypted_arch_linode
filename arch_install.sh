@@ -76,7 +76,7 @@ done
 # get SSH key
 echo "Enter SSH key for '$USERNAME'" && read -rp '> ' SSHKEY && echo
 
-# prompt for static IPs for config later
+# prompt for static IPs to configure later
 # NOTE: I guess theoretically, I could start this out as DHCP, curl -4/6
 # against icanhazip.com, and then setup static networking fully internally
 # that way, but that's just silly amounts of extra effort.
