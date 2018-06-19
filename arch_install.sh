@@ -137,9 +137,10 @@ sed -i 's?#Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?Server =
 # create subvolumes in Snapper's recommended subvolume layout
 mount -o compress=lzo /dev/mapper/crypt-sdc /mnt
 # top level subvols
-btrfs subvolume create /mnt/@           # will mount at /
-btrfs subvolume create /mnt/@snapshots  # will mount at /.snapshots
-btrfs subvolume create /mnt/@home       # will mount at /home
+btrfs subvolume create /mnt/@               # will mount at /
+btrfs subvolume create /mnt/@snapshots      # will mount at /.snapshots
+btrfs subvolume create /mnt/@home           # will mount at /home
+btrfs subvolume create /mnt/@home-snapshots # will mount at /home/.snapshots
 umount /mnt
 
 cat << ARCH_STRAP_EOF | root.x86_64/bin/arch-chroot /tmp/root.x86_64 /bin/bash
@@ -148,8 +149,6 @@ mkdir /run/shm
 
 # mount root subvolume, top level subvolumes, and any other top level partitions
 mount -o compress=lzo,subvol=@ /dev/mapper/crypt-sdc /mnt
-mkdir -p /mnt/.snapshots
-mount -o compress=lzo,subvol=@snapshots /dev/mapper/crypt-sdc /mnt/.snapshots
 mkdir -p /mnt/home
 mount -o compress=lzo,subvol=@home /dev/mapper/crypt-sdc /mnt/home
 mkdir -p /mnt/boot
