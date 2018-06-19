@@ -18,7 +18,7 @@ token = config.get('api-token')
 client = LinodeClient(token)
 
 # get necessary variables
-linode_type = config.get('linode').get('plan', 'g5-nanode-1')
+linode_type = config.get('linode').get('type', 'g6-nanode-1')
 region = config.get('linode').get('region', 'us-east')
 linode_label = config.get('linode').get('label', str(calendar.timegm(time.gmtime())))
 linode_group = config.get('linode').get('group')
