@@ -322,6 +322,9 @@ nameserver 1.0.0.1
 
 RESOLV_EOF
 
+# unmount all subvolumes
+umount --recursive /mnt
+
 exit
 ARCH_STRAP_EOF
 
