@@ -5,7 +5,7 @@ https://github.com/tjhop/encrypted_arch_linode
 https://github.com/tjhop/encrypted_debian_linode
 """
 
-from linode import LinodeClient
+from linode_api4 import LinodeClient
 import yaml
 import time
 import calendar
@@ -26,7 +26,7 @@ config_label = config.get('linode').get('config_profile').get('label')
 
 # create empty linode
 print("* Creating Linode -> {}".format(linode_label))
-l = client.linode.create_instance(ltype=linode_type, region=region, label=linode_label, group=linode_group)
+l = client.linode.instance_create(ltype=linode_type, region=region, label=linode_label, group=linode_group)
 disk_size = vars(l.specs)['disk'] - 512
 
 print('* Making disks')
@@ -35,20 +35,20 @@ while l.status not in ('offline', 'running'):
     time.sleep(5)
     print("~ waiting on Linode status... ({})".format(l.status))
 print('* Creating boot disk')
-disk_sda = l.create_disk(size=256, label='Boot', filesystem='raw')
+disk_sda = l.disk_create(size=256, label='Boot', filesystem='raw')
 
 # TODO: Change polling to check disk status for `disk_sda` not in 'not ready'
 while disk_sda.status not in ('ready'):
     time.sleep(5)
     print("~ waiting on disk 'sda' status... ({})".format(disk_sda.status))
 print('* Creating swap disk')
-disk_sdb = l.create_disk(size=256, label='Swap', filesystem='raw')
+disk_sdb = l.disk_create(size=256, label='Swap', filesystem='raw')
 
 while disk_sdb.status not in ('ready'):
     time.sleep(5)
     print("~ waiting on disk 'sdb' status... ({})".format(disk_sdb.status))
 print('* Creating system disk')
-disk_sdc = l.create_disk(size=disk_size, label='System', filesystem='raw')
+disk_sdc = l.disk_create(size=disk_size, label='System', filesystem='raw')
 
 # create configuration profile
 while disk_sdc.status not in ('ready'):
@@ -60,7 +60,7 @@ helpers_dict = {'updatedb_disabled': False,
                 'network': False,
                 'devtmpfs_automount': False }
 print('* Creating config profile')
-l.create_config(kernel='linode/grub2',
+l.config_create(kernel='linode/grub2',
                 label=config_label,
                 devices=l.disks,
                 helpers=helpers_dict)
