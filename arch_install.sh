@@ -241,42 +241,31 @@ sed -i '/\# Misc options/a ILoveCandy' /etc/pacman.conf
 # make sure there are at least some default packages
 echo "~ Updating system and installing some default packages"
 pacman -Syyu --noconfirm
-cat << PKG_LIST_EOF | tr '\n' ' ' | pacman -S --noconfirm --needed -
-btrfs-progs
-clamav
-dnsutils
-git
-haveged
-nmap
-openssh
-salt
-snapper
-strace
-sysstat
-tcpdump
-tmux
-ufw
-vim
-wget
-zsh
-zsh-syntax-highlighting
-PKG_LIST_EOF
+pacman -S --needed --noconfirm btrfs-progs clamav dnsutils git haveged nmap openssh salt snapper strace sysstat tcpdump tmux ufw vim wget zsh zsh-syntax-highlighting
 
-# install pacaur
-# https://github.com/rmarquis/pacaur
-echo "~ Setting up pacaur \$now"
-pacman -S --noconfirm expac yajl
-if [ ! -n "$(pacman -Qs cower)" ]; then
-  echo "~ Building cower"
-  curl -sL -o /tmp/PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
-  su "$USERNAME" --login -s /bin/bash -c 'cd /tmp && makepkg PKGBUILD --skippgpcheck --needed --noconfirm'
-  pacman -U /tmp/cower*.pkg.tar.xz --noconfirm
-fi
-if [ ! -n "$(pacman -Qs pacaur)" ]; then
-  echo "~ Building pacaur"
-  curl -sL -o /tmp/PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
-  su "$USERNAME" --login -s /bin/bash -c 'cd /tmp && makepkg PKGBUILD --needed --noconfirm'
-  pacman -U /tmp/pacaur*.pkg.tar.xz --noconfirm
+# install aurman
+# https://github.com/polygamma/aurman
+# https://aur.archlinux.org/packages/aurman/
+echo "~ Setting up aurman \$now"
+if [ ! -n "$(pacman -Qs aurman)" ]; then
+  echo "~ Building aurman"
+
+  # temporarily allow user to run pacman as root without password for automated `makepkg` install
+  echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/pacman" > /etc/sudoers.d/aurman
+
+  # Not super happy about skipping the import/check of the PGP keys in the PKGBUILD since Jonni is
+  # kind enough to provide them, but an automated install to auto-process it is arguably just as bad
+  # as skipping the check here. Maybe one of these days I'll look into rolling an ISO and embedding
+  # aurman in so stuff like this isn't necessary.
+  su "$USERNAME" --login -s /bin/bash << AURMAN_BUILD_EOF
+    # clone aurman from aur into /tmp/aurman
+    cd /tmp
+    git clone https://aur.archlinux.org/aurman.git
+    cd /tmp/aurman
+    makepkg --syncdeps --rmdeps --clean --install --skippgpcheck --needed --noconfirm PKGBUILD
+AURMAN_BUILD_EOF
+
+  rm /etc/sudoers.d/aurman
 fi
 
 # basic SSH config/lockdown
