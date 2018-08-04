@@ -11,7 +11,7 @@ It works and does everything I want right now:
 - Provides a (IMO) good base/clean slate to work from. The remainder of the system configuration is purposefully left for other config scripts or system configuration services (I'm using salt now).
 
 ## Using the script/Installing
-This requires some manual prep because it builds the encrypted disks from rescue mode. There's a script included in this repo called `create.py` that will create a Linode based on the options specified in `config.yaml` using the new Linode API v4 and boot it into rescue mode for you.
+This requires some manual prep because it builds the encrypted disks from rescue mode. There's a script included in this repo called `create.py` that will create a Linode based on the options specified in `config.yaml` using the new [Linode API v4 python client](https://github.com/linode/linode_api4-python) and boot it into rescue mode for you.
 
 Here's an example `config.yaml`:
 ```
@@ -28,7 +28,7 @@ linode:
     label: 'example config profile label'
 ```
 
-The script will create a Linode with following disk arrangement and configuration profile:
+Run the script and it will create a Linode with following disk arrangement and configuration profile:
 ```
 - Disks:
   - /dev/sda
@@ -57,7 +57,7 @@ The Linode will also be rebooted into rescue mode automatically.
   passwd
   service ssh start
   ```
-- Get the `arch_install.sh` script onto the rescue system and executable somehow. `Git clone`, `scp, vim`, etc.
+- Get the `arch_install.sh` script onto the rescue system and executable somehow. `git clone`, `scp`, create the file with `vim`, etc.
 - Run the `arch_install.sh` script:
 
   `./arch_install 2>&1 | tee arch.log`
@@ -76,15 +76,18 @@ Once in the script and running:
   Follow it.
 - When the script is done, it'll say so. `scp` the log file to your local computer just in case.
 
-**Note**: There are a few *expected* errors/messages that this script will post when running, such as failing to generate the initial initramfs/kernel. These are expected, so don't stress.
-
 At this point, you're clear to reboot back into the system.
 
 ## Using the system
 In order to enter your LUKS password to decrypt the disks, you'll need to connect with Lish first. After it's successfully unlocked, the system will finish booting and you can access the system with SSH
 
 ## What if I break something and need to use rescue mode?
-Connect to the Linode with Lish and then reboot it into rescue mode. When Finnix first starts, it'll try to mount the disk (and therefore prompt for your LUKS password).
+First, reboot the Linode into rescue mode with the same disk layout as the Linode's configuration profile:
+- /dev/sda == Boot disk
+- /dev/sdb == Swap disk
+- /dev/sdc == System disk
+
+Connect to the Linode with Lish. When Finnix first starts, it'll try to mount the disk (and therefore prompt for your LUKS password).
 
 If you miss this prompt, you can still mount it manually like so:
 
@@ -96,6 +99,7 @@ read -rsp '> ' LUKSPASSWD
 echo -n "$LUKSPASSWD" | cryptsetup luksOpen /dev/sdc crypt-sdc --key-file=-
 mount -o compress=lzo,subvol=@ /dev/mapper/crypt-sdc /mnt
 mount -o compress=lzo,subvol=@home /dev/mapper/crypt-sdc /mnt/home
+mount /dev/sda /mnt/boot
 ```
 
 ## License
