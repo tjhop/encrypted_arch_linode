@@ -138,9 +138,7 @@ sed -i 's?#Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?Server =
 mount -o compress=lzo /dev/mapper/crypt-sdc /mnt
 # top level subvols
 btrfs subvolume create /mnt/@               # will mount at /
-btrfs subvolume create /mnt/@snapshots      # will mount at /.snapshots
 btrfs subvolume create /mnt/@home           # will mount at /home
-btrfs subvolume create /mnt/@home-snapshots # will mount at /home/.snapshots
 umount /mnt
 
 cat << ARCH_STRAP_EOF | root.x86_64/bin/arch-chroot /tmp/root.x86_64 /bin/bash
