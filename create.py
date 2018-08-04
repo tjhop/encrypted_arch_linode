@@ -37,7 +37,6 @@ while l.status not in ('offline', 'running'):
 print('* Creating boot disk')
 disk_sda = l.disk_create(size=256, label='Boot', filesystem='raw')
 
-# TODO: Change polling to check disk status for `disk_sda` not in 'not ready'
 while disk_sda.status not in ('ready'):
     time.sleep(5)
     print("~ waiting on disk 'sda' status... ({})".format(disk_sda.status))
