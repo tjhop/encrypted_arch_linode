@@ -300,8 +300,8 @@ fi
 
 # basic SSH config/lockdown
 echo "~ sshd config"
-sed -i '/^#PasswordAuthentication/c\PasswordAuthentication no' /etc/ssh/sshd_config
-sed -i '/^#PermitRoot/c\PermitRootLogin no' /etc/ssh/sshd_config
+sed -E -i '/^#?PasswordAuthentication/c\PasswordAuthentication no' /etc/ssh/sshd_config
+sed -E -i '/^#?PermitRoot/c\PermitRootLogin no' /etc/ssh/sshd_config
 
 # user account config
 echo "~ Configuring SSH keys and user stuff"
