@@ -160,9 +160,8 @@ cd /tmp || exit
 BOOTSTRAP_DATE=$(date +%Y.%m)
 BOOTSTRAP_FILE="archlinux-bootstrap-$BOOTSTRAP_DATE.01-x86_64.tar.gz"
 BOOTSTRAP_URL="https://mirrors.kernel.org/archlinux/iso/$BOOTSTRAP_DATE.01/$BOOTSTRAP_FILE"
-# wget was being annoying.
 echo "Downloading newest Arch bootstrap"
-wget -4 --quiet  --no-check-certificate "$BOOTSTRAP_URL" || { echo "couldn't download <$BOOTSTRAP_FILE>"; echo "=("; exit 1; }
+wget -4 --quiet --no-check-certificate "$BOOTSTRAP_URL" || { echo "couldn't download <$BOOTSTRAP_FILE>"; echo "=("; exit 1; }
 tar xf $BOOTSTRAP_FILE
 # use a different delimiter for sed so it doesn't get tripped up on /'s in url
 sed -i 's?#Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?' root.x86_64/etc/pacman.d/mirrorlist
