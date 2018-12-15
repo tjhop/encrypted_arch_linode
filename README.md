@@ -67,14 +67,15 @@ The Linode will also be rebooted into rescue mode automatically.
 Once in the script and running:
 - The script is interactive and will prompt for various settings, including:
   - encryption passwords for LUKS
+  - whether or not to wipe the system disk with random data prior to encryption
   - username/passwords/SSH key
   - IPv4/IPv6 addresses for the newly created Linode to set static networking
   - Optional private IP config (*note* this needs a private IP address already assigned to the Linode)
 - You'll get to a point where it'll say:
-  > ~ Alright, starting to do stuff now. Come back in 5 mins.
+  > ~ Alright, starting to do stuff now. Come back in a little while.
 
   Follow it.
-- When the script is done, it'll say so. `scp` the log file to your local computer just in case.
+- When the script is done, it'll say so. If you want to keep the installation log, `scp` it to another computer.
 
 At this point, you're clear to reboot back into the system.
 

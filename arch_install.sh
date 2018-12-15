@@ -101,9 +101,26 @@ while true; do
   fi
 done
 
+# offer to pre-format system disk with random data
+while true; do
+  echo "Pre-format system disk with random data?"
+  echo "Increases theoretical security by making statistical analysis harder, but also takes longer to setup."
+  echo "Want to do it? (y/n): " && read -rp '> ' INPUT && echo
+
+  if [[ "$INPUT" =~ ^[Yy]$ ]]; then
+    RANDOM_WRITE="yes"
+    break
+  elif [[ "$INPUT" =~ ^[Nn]$ ]]; then
+    RANDOM_WRITE="no"
+    break
+  else
+    echo 'Need a yes/no answer here'
+  fi
+done
+
 # do work
 # -------
-echo "~ Alright, starting to do stuff now. Come back in 5 mins."
+echo "~ Alright, starting to do stuff now. Come back in a little while."
 
 # make sure finnix has plenty of entropy before attempting to create encrypted disks
 apt-get -o Acquire::ForceIPv4=true update
@@ -113,6 +130,22 @@ haveged -w 2048
 
 # Build encrypted disks
 echo "~ Making disks"
+if [[ "$RANDOM_WRITE" == 'yes' ]]; then
+    echo "~ Filling system disk with random data"
+    # Turns out that it's faster to write from /dev/zero to an encrypted device
+    # to generate random data than it is to use /dev/urandom. Inspired by:
+    # https://www.linuxglobal.com/quickly-fill-a-disk-with-random-bits-without-dev-urandom/
+    TEMPLUKSPASSWD=$(head -c 64 /dev/urandom | base64)
+    echo -n "$TEMPLUKSPASSWD" | cryptsetup -v --key-size 512 --hash sha512 luksFormat /dev/sdc --key-file=-
+    echo -n "$TEMPLUKSPASSWD" | cryptsetup luksOpen /dev/sdc fake-device --key-file=-
+    dd if=/dev/zero bs=1M | pv -pt | dd of=/dev/mapper/fake-device bs=1M || /bin/true
+    cryptsetup luksClose fake-device
+    unset TEMPLUKSPASSWD
+    # overwrite old LUKS header
+    dd if=/dev/urandom bs=512 count=$(cryptsetup luksDump /dev/sdc | grep -i 'payload' | awk '{print $3}') of=/dev/sdc
+fi
+
+echo "~ Creating LUKS container"
 echo -n "$LUKSPASSWD" | cryptsetup -v --key-size 512 --hash sha512 --iter-time 5000 luksFormat /dev/sdc --key-file=-
 echo -n "$LUKSPASSWD" | cryptsetup luksOpen /dev/sdc crypt-sdc --key-file=-
 unset LUKSPASSWD
