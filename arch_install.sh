@@ -189,8 +189,7 @@ BOOTSTRAP_URL="https://mirrors.kernel.org/archlinux/iso/$BOOTSTRAP_DATE.01/$BOOT
 echo "Downloading newest Arch bootstrap"
 wget -4 --quiet --no-check-certificate "$BOOTSTRAP_URL" || { echo "couldn't download <$BOOTSTRAP_FILE>"; echo "=("; exit 1; }
 tar xf $BOOTSTRAP_FILE
-# use a different delimiter for sed so it doesn't get tripped up on /'s in url
-sed -i 's?#Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch?' root.x86_64/etc/pacman.d/mirrorlist
+sed -i '/https:\/\/mirrors.kernel.org/c\Server = https:\/\/mirrors.kernel.org\/archlinux\/$repo\/os\/$arch/' root.x86_64/etc/pacman.d/mirrorlist
 
 # create subvolumes in Snapper's recommended subvolume layout
 mount -o compress=lzo /dev/mapper/crypt-sdc /mnt
@@ -220,8 +219,7 @@ genfstab -p /mnt/ >> /mnt/etc/fstab
 cat << SYSTEM_BUILD_EOF | arch-chroot /mnt /bin/bash
 # general system config
 echo "~ Some system config stuff"
-sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
-sed -i 's/#en_US ISO-8859-1/en_US ISO-8859-1/' /etc/locale.gen
+sed -i -e '/en_US.UTF-8/s/^#//' -e '/en_US ISO/s/^#//g' /etc/locale.gen
 locale-gen
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 export 'LANG=en_US.UTF-8'
@@ -260,9 +258,8 @@ systemctl enable sshd
 
 # fixes to build kernel for encrypted disks
 echo "~ Building kernel"
-sed -i '/^HOOKS/s/filesystems/encrypt filesystems/' /etc/mkinitcpio.conf
-# btrfs doesn't really have a fsck function. exclude it to stop build errors.
-sed -i '/^HOOKS/s/ fsck//' /etc/mkinitcpio.conf
+# add in encrypt hook, and remove fsck since btrfs doens't really have one
+sed -i -e '/^HOOKS/s/filesystems/encrypt filesystems/' -e '/^HOOKS/s/ fsck//' /etc/mkinitcpio.conf
 mkinitcpio -p linux
 if [[ "$ENCRYPT_SWAP" == 'yes' ]]; then
 echo crypt-swap /dev/sdb /dev/urandom swap >> /etc/crypttab
@@ -275,17 +272,18 @@ unset ROOTPASSWD
 useradd -m -g users -G wheel -s /bin/zsh "$USERNAME"
 echo "$USERNAME:$USERPASSWD" | chpasswd
 unset USERPASSWD
-sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /etc/sudoers
+sed -i '/%wheel ALL=(ALL) ALL/s/^# *//' /etc/sudoers
 
 # Get grub setup
 echo "~ Installing GRUB"
 pacman -S grub --noconfirm
-sed -i '/^GRUB_TIMEOUT/c\GRUB_TIMEOUT=3' /etc/default/grub
-sed -i '/^GRUB_CMDLINE_LINUX=/c\GRUB_CMDLINE_LINUX=\"console=ttyS0,19200n8 cryptdevice=/dev/sdc:crypt-sdc\"' /etc/default/grub
-sed -i '/^#GRUB_DISABLE_LINUX_UUID=true/c\GRUB_DISABLE_LINUX_UUID=true' /etc/default/grub
+sed -i -e '/GRUB_TIMEOUT=/c\GRUB_TIMEOUT=3' \
+    -e '/GRUB_CMDLINE_LINUX=/c\GRUB_CMDLINE_LINUX=\"console=ttyS0,19200n8 cryptdevice=/dev/sdc:crypt-sdc\"' \
+    -e '/GRUB_DISABLE_LINUX_UUID=true/c\GRUB_DISABLE_LINUX_UUID=true' \
+    -e '/GRUB_ENABLE_CRYPTODISK=/c\GRUB_ENABLE_CRYPTODISK=y' \
+    /etc/default/grub
 echo 'GRUB_SERIAL_COMMAND="serial --speed=19200 --unit=0 --word=8 --parity=no --stop=1"' >> /etc/default/grub
 echo 'GRUB_TERMINAL=serial' >> /etc/default/grub
-echo 'GRUB_ENABLE_CRYPTODISK=y' >> /etc/default/grub
 grub-install --recheck /dev/sda
 grub-mkconfig --output /boot/grub/grub.cfg
 mkdir -p /boot/boot
@@ -328,8 +326,9 @@ fi
 
 # basic SSH config/lockdown
 echo "~ sshd config"
-sed -E -i '/^#?PasswordAuthentication/c\PasswordAuthentication no' /etc/ssh/sshd_config
-sed -E -i '/^#?PermitRoot/c\PermitRootLogin no' /etc/ssh/sshd_config
+sed -E -i -e '/^#?PasswordAuthentication/c\PasswordAuthentication no' \
+    -e '/^#?PermitRootLogin/c\PermitRootLogin no' \
+    /etc/ssh/sshd_config
 
 # user account config
 echo "~ Configuring SSH keys and user stuff"
