@@ -137,6 +137,11 @@ done
 # -------
 echo "~ Alright, starting to do stuff now. Come back in a little while."
 
+# fix up finnix environment. the finnix image has the debian testing repo baked in,
+# but signing keys have changed and I don't feel like automating gpg key imports to
+# keep using deb testing. switching it to jessie for a "least effort" fix.
+sed -i '/cdn.debian.net/s/testing/jessie/g' /etc/apt/sources.list
+
 # make sure finnix has plenty of entropy before attempting to create encrypted disks
 apt-get -o Acquire::ForceIPv4=true update
 apt-get -o Acquire::ForceIPv4=true install haveged -y
