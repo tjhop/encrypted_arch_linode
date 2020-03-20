@@ -339,17 +339,6 @@ echo "$SSHKEY" >> "/home/$USERNAME/.ssh/authorized_keys"
 chmod -R 700 "/home/$USERNAME/.ssh"
 chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
 
-cat > "/home/$USERNAME/.zshrc" << ZSH_CONFIG_EOF
-autoload -Uz promptinit
-promptinit
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-autoload predict-on
-
-# build prompt
-PROMPT="%F{magenta}%n@%m%f:%F{cyan}%~%f %F{green}%(!.=>.->)%f "
-
-ZSH_CONFIG_EOF
-
 USER_CONFIG_EOF
 
 exit
