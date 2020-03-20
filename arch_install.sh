@@ -118,6 +118,21 @@ while true; do
   fi
 done
 
+# offer to encrypt swap disk
+while true; do
+  echo "Encrypt swap disk too? (y/n): " && read -rp '> ' INPUT && echo
+
+  if [[ "$INPUT" =~ ^[Yy]$ ]]; then
+    ENCRYPT_SWAP="yes"
+    break
+  elif [[ "$INPUT" =~ ^[Nn]$ ]]; then
+    ENCRYPT_SWAP="no"
+    break
+  else
+    echo 'Need a yes/no answer here'
+  fi
+done
+
 # do work
 # -------
 echo "~ Alright, starting to do stuff now. Come back in a little while."
@@ -151,9 +166,15 @@ echo -n "$LUKSPASSWD" | cryptsetup luksOpen /dev/sdc crypt-sdc --key-file=-
 unset LUKSPASSWD
 mkfs -t ext2 /dev/sda
 mkfs.btrfs --label 'btrfs-root' /dev/mapper/crypt-sdc
-cryptsetup -d /dev/urandom create crypt-swap /dev/sdb
-mkswap /dev/mapper/crypt-swap
-swapon /dev/mapper/crypt-swap
+
+if [[ "$ENCRYPT_SWAP" == 'yes' ]]; then
+    cryptsetup -d /dev/urandom create crypt-swap /dev/sdb
+    mkswap /dev/mapper/crypt-swap
+    swapon /dev/mapper/crypt-swap
+else
+    mkswap /dev/sdb
+    swapon /dev/sdb
+fi
 
 # Fetch and build arch straps
 cd /tmp || exit
@@ -238,7 +259,9 @@ sed -i '/^HOOKS/s/filesystems/encrypt filesystems/' /etc/mkinitcpio.conf
 # btrfs doesn't really have a fsck function. exclude it to stop build errors.
 sed -i '/^HOOKS/s/ fsck//' /etc/mkinitcpio.conf
 mkinitcpio -p linux
+if [[ "$ENCRYPT_SWAP" == 'yes' ]]; then
 echo crypt-swap /dev/sdb /dev/urandom swap >> /etc/crypttab
+fi
 
 # Build users
 echo "~ Setting up users"
