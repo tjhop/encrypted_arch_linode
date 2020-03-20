@@ -212,7 +212,7 @@ mount /dev/sda /mnt/boot
 
 pacman-key --init
 pacman-key --populate archlinux
-pacstrap /mnt base base-devel btrfs-progs
+pacstrap /mnt base base-devel linux linux-headers mkinitcpio btrfs-progs
 genfstab -p /mnt/ >> /mnt/etc/fstab
 
 # Some system-level config junk
